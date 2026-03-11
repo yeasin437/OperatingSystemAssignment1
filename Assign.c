@@ -7,12 +7,10 @@
 
 #define BUFFER_SIZE 128
 
-
-
 int main()
 {
-    int pipe1[2];
-    int pipe2[2];
+    int pipe1[2];   /* pipe1: P1 -> P2 */
+    int pipe2[2];   /* pipe2: P2 -> P3 */
     pid_t pid1, pid2;
     char buffer[BUFFER_SIZE];
 
@@ -38,12 +36,13 @@ int main()
 
     if (pid1 == 0)
     {
+        /* Child A (P2): read from pipe1, remove digits, send to pipe2 */
         char clean[BUFFER_SIZE];
         int n;
         int i, j = 0;
 
-        close(pipe1[1]);
-        close(pipe2[0]);
+        close(pipe1[1]);   /* P2 does not write to pipe1 */
+        close(pipe2[0]);   /* P2 does not read from pipe2 */
 
         n = read(pipe1[0], buffer, BUFFER_SIZE - 1);
         if (n < 0)
@@ -81,6 +80,7 @@ int main()
 
     if (pid2 == 0)
     {
+        /* Child B (P3): read from pipe2, convert to uppercase, count characters */
         char received[BUFFER_SIZE];
         int n;
         int count = 0;
@@ -88,7 +88,7 @@ int main()
 
         close(pipe1[0]);
         close(pipe1[1]);
-        close(pipe2[1]);
+        close(pipe2[1]);   /* P3 does not write to pipe2 */
 
         n = read(pipe2[0], received, BUFFER_SIZE - 1);
         if (n < 0)
@@ -112,7 +112,8 @@ int main()
         exit(0);
     }
 
-    close(pipe1[0]);
+    /* Parent Process (P1): read input and send it to P2 */
+    close(pipe1[0]);   /* P1 does not read from pipe1 */
     close(pipe2[0]);
     close(pipe2[1]);
 
@@ -125,6 +126,7 @@ int main()
 
     close(pipe1[1]);
 
+    /* Wait for both child processes */
     wait(NULL);
     wait(NULL);
 
